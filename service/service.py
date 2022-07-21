@@ -10,9 +10,9 @@ import abc
 class Service(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def init(self):
+    def init(self) -> None:
         pass
 
     @abc.abstractmethod
-    def invoke(self, **kwargs):
+    def invoke(self, **kwargs) -> dict:
         pass
