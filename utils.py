@@ -6,5 +6,12 @@
 """
 
 
+def app_filter(order: int):
+    def wrapper(cls):
+        return cls
+
+    return wrapper
+
+
 def is_empty(text: str) -> bool:
     return text is None or len(text) == 0

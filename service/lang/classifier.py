@@ -61,11 +61,16 @@ lang_2_code = LangCode()
 class IClassifier(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
-    def train(self, input_path: str, re_train: bool) -> bool:
+    def load_model(self, model_path: str) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def train(self, input_path: str, re_train: bool, model_path: str) -> bool:
         """
         分类器训练
         :param re_train: 是否要重新训练
         :param input_path: 数据集的目录, 目录下文件名即为label, 文件内容包含了训练集和测试集
+        :param model_path: 模型保存的路径
         :return: 成功 True
         """
         pass
@@ -111,22 +116,24 @@ class BayesClassifier(IClassifier):
     贝叶斯分类器
     """
 
-    def __init__(self, model_path: str):
+    def __init__(self):
         self._vectorizer = None
         self._classifier = MultinomialNB()
-        self._model_name = model_path
         self._init_vectorizer()
         self._x_train = []
         self._y_train = []
         self._x_test = []
         self._y_test = []
 
-    def train(self, input_path: str, re_train: bool = False) -> bool:
-        if not re_train and os.path.exists(self._model_name):
-            logger.info(f"Load exist model: {self._model_name}")
-            self._classifier, self._vectorizer = load(self._model_name)
+    def load_model(self, model_path: str) -> bool:
+        if os.path.exists(model_path):
+            logger.info(f"Load exist model: {model_path}")
+            self._classifier, self._vectorizer = load(model_path)
             return True
+        else:
+            return False
 
+    def train(self, input_path: str, model_path: str, re_train: bool = False) -> bool:
         if not os.path.exists(input_path) or os.path.isfile(input_path):
             logger.error("input_path should be a dirname.")
             return False
@@ -135,7 +142,7 @@ class BayesClassifier(IClassifier):
         for label in labels:
             logger.info(f"Load corpus {label}...")
             X_train, Y_train = IClassifier.load_data(os.path.join(input_path, label))
-            x_train, x_test, y_train, y_test = train_test_split(X_train, Y_train, train_size=100000)
+            x_train, x_test, y_train, y_test = train_test_split(X_train, Y_train, train_size=0.8)
             self._x_train.extend(x_train)
             self._y_train.extend(y_train)
             self._x_test.extend(x_test)
@@ -145,9 +152,9 @@ class BayesClassifier(IClassifier):
         features = self._vectorizer.transform(self._x_train)
         self._classifier.fit(features, self._y_train)
         logger.info("Finish bayes classifier...")
-        if os.path.exists(self._model_name):
-            os.remove(self._model_name)
-        dump((self._classifier, self._vectorizer), self._model_name)
+        if os.path.exists(model_path):
+            os.remove(model_path)
+        dump((self._classifier, self._vectorizer), model_path)
         return True
 
     def predict(self, input_content: list) -> list[str]:

@@ -14,7 +14,5 @@ class Service(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def invoke(self, **kwargs) -> dict:
+    def invoke(self, **kwargs):
         pass
-
-

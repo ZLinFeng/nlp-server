@@ -15,7 +15,6 @@ from service.service import Service
 from config.settings import global_settings
 from loguru import logger
 import fasttext
-from joblib import load
 
 fasttext_path = os.path.join(global_settings.MODELS_HOME, "lang/fasttext.bin")
 latin_lang_path = os.path.join(global_settings.MODELS_HOME, "lang/latin_lang.bin")
@@ -24,10 +23,11 @@ russia_lang_path = os.path.join(global_settings.MODELS_HOME, "lang/russia_lang.b
 classifier_path = os.path.join(global_settings.MODELS_HOME, "lang/classifier.bin")
 
 
-class AppService(Service):
+class LangService(Service):
 
     def __init__(self) -> None:
         super().__init__()
+        fasttext.FastText.eprint = lambda x: None
         self._fasttext = None  # fasttext 提供的语言检测模型
         self._latin_classifier = None  # 系统提供拉丁语的语言检测模型
         self._arab_classifier = None  # 系统提供的阿拉伯语的语言检测模型
@@ -38,6 +38,7 @@ class AppService(Service):
         self._cjh_preprocessor = CJKPreprocessor()
         self._arab_preprocessor = ArabPreprocessor()
         self._russia_preprocessor = RussiaPreprocessor()
+        self.init()  # 未使用依赖注入之前
 
     def init(self) -> None:
         # 检查模型并加载
@@ -48,19 +49,24 @@ class AppService(Service):
 
         if not os.path.exists(latin_lang_path):
             logger.exception("Missing language model.")
-        self._latin_classifier = BayesClassifier(latin_lang_path)
+        self._latin_classifier = BayesClassifier()
+        self._latin_classifier.load_model(latin_lang_path)
 
         if not os.path.exists(arab_lang_path):
             logger.exception("Missing language model.")
-        self._arab_classifier = BayesClassifier(arab_lang_path)
+        self._arab_classifier = BayesClassifier()
+        self._arab_classifier.load_model(arab_lang_path)
 
         if not os.path.exists(russia_lang_path):
             logger.exception("Missing language model.")
-        self._russia_classifier = BayesClassifier(russia_lang_path)
+        self._russia_classifier = BayesClassifier()
+        self._russia_classifier.load_model(russia_lang_path)
 
+        """
         if not os.path.exists(classifier_path):
             logger.exception("Missing classifier model.")
         self._classifier = load(classifier_path)
+        """
 
     def predict(self, content: str) -> str:
         content = IPreprocessor.word_filter(content)
@@ -131,8 +137,11 @@ class AppService(Service):
 
         return p_res
 
-    def invoke(self, **kwargs) -> dict:
+    def invoke(self, **kwargs):
         if kwargs.__contains__("content"):
-            return {"lang": self.predict(kwargs["content"])}
+            return self.predict(kwargs["content"])
         else:
-            return {"lang": "unknown"}
+            return "unknown"
+
+
+lang_service = LangService()
