@@ -4,7 +4,6 @@
 @date    2022/7/23 6:57 PM
 @author  zlf
 """
-import inspect
 import os
 
 from config.settings import global_settings

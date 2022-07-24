@@ -5,7 +5,6 @@
 @author  zlf
 """
 import inspect
-import sys
 
 import uvicorn
 from fastapi import FastAPI

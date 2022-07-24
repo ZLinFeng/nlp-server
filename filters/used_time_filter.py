@@ -4,7 +4,6 @@
 @date    2022/7/23 4:47 PM
 @author  zlf
 """
-import inspect
 import time
 
 from starlette.types import Scope, Send, Receive, ASGIApp
